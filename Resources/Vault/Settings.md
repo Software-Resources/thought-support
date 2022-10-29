@@ -27,4 +27,16 @@ inbox_tag: "#Inbox"
 
 # Random Excerpts
 excerpts_root: Resources/Excerpts
+
+# Recipe Manager Below
+# Used for displaying prices and costs
+locale: en-GB
+currency: GBP
+
+# Used to find recipe files
+recipes_root: Areas/Cooking/Recipes
+ingredients_root: Areas/Cooking/Ingredients
+
+# The cookbook sorts prices by your preferred shop
+recipes_shop: Tesco
 ---
