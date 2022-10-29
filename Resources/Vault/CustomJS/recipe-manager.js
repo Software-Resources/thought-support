@@ -11,6 +11,7 @@ class RecipeManager {
     const INGREDIENTS_ROOT = ThoughtSupportSettings.get("ingredients_root", dv);
 
     const pantryList = [];
+    const IngredientsPresentInPantry = new Set();
 
     // TODO: Cache ingredientData for repetition between recipes
     const ingredientData = recipePage.ingredients.reduce(
@@ -27,6 +28,7 @@ class RecipeManager {
         // TODO: Handle dates
         if (ingredientPage.pantry) {
           pantryList.push(ingredientPage);
+          IngredientsPresentInPantry.add(ingredientPage.file.name);
         }
         const productData = ingredientPage.shops.reduce(
           (ingredientAtShops, shop) => {
@@ -59,10 +61,39 @@ class RecipeManager {
     const presentAtShop = {};
     const caloriesForRecipeAtShop = {};
     const groceryListAtShops = {};
+
     for (const ingredient of recipePage.ingredients) {
       const ingredientPage = dv.page(INGREDIENTS_ROOT + "/" + ingredient.name);
+
       const ingredientAtShops = ingredientData[ingredient.name];
       for (const [shopName, productData] of Object.entries(ingredientAtShops)) {
+        const updateCalorieValues = (product, quantity) => {
+          if (ingredientPage.pantry) {
+            // Do nothing if it's in the pantry, we will fix those up at the end
+            return;
+          }
+          if (product.kcal && product["nutritional quantity"]) {
+            caloriesForRecipeAtShop[shopName] +=
+              (quantity / cheapestProduct["nutritional quantity"]) *
+              product.kcal;
+          } else if (
+            ingredientPage.kcal &&
+            ingredientPage["nutritional quantity"]
+          ) {
+            caloriesForRecipeAtShop[shopName] +=
+              (quantity / ingredientPage["nutritional quantity"]) *
+              ingredientPage.kcal;
+          } else {
+            throw new Error(
+              "Neither the ingredient " +
+                ingredientPage.file.name +
+                " nor the product " +
+                product.name +
+                " have both 'kcal' and 'nutritional quantity' properties."
+            );
+          }
+        };
+
         const { productsSortedByCostRatio, productsSortedByProductCost } =
           productData;
         if (!presentAtShop[shopName]) {
@@ -78,6 +109,7 @@ class RecipeManager {
           groceryListAtShops[shopName] = [];
           caloriesForRecipeAtShop[shopName] = 0;
         }
+
         let quantityRemaining = ingredient.quantity;
 
         // Check what the cheapest product that has all the required
@@ -91,26 +123,7 @@ class RecipeManager {
         }
         if (cheapestProduct) {
           // A cheapest product with all the required quantity was found
-          if (cheapestProduct.kcal && cheapestProduct["nutritional quantity"]) {
-            caloriesForRecipeAtShop[shopName] +=
-              (quantityRemaining / cheapestProduct["nutritional quantity"]) *
-              cheapestProduct.kcal;
-          } else if (
-            ingredientPage.kcal &&
-            ingredientPage["nutritional quantity"]
-          ) {
-            caloriesForRecipeAtShop[shopName] +=
-              (quantityRemaining / ingredientPage["nutritional quantity"]) *
-              ingredientPage.kcal;
-          } else {
-            throw new Error(
-              "Neither the ingredient " +
-                ingredientPage.name +
-                " nor the product " +
-                product.name +
-                " have both 'kcal' and 'nutritional quantity' properties."
-            );
-          }
+          updateCalorieValues(cheapestProduct, quantityRemaining);
 
           usedProductServingCostAtShops[shopName] +=
             (quantityRemaining / cheapestProduct.quantity) *
@@ -143,32 +156,8 @@ class RecipeManager {
 
               totalCostAtShops[shopName] += product.price;
               usedProductServingCostAtShops[shopName] += product.price;
-              if (ingredientPage.pantry) {
-                caloriesForRecipeAtShop[shopName] +=
-                  (product.quantity / ingredientPage["nutritional quantity"]) *
-                  ingredientPage.kcal;
-              } else {
-                if (product.kcal && product["nutritional quantity"]) {
-                  product +=
-                    (product.quantity / product["nutritional quantity"]) *
-                    product.kcal;
-                } else if (
-                  ingredientPage.kcal &&
-                  ingredientPage["nutritional quantity"]
-                ) {
-                  caloriesForRecipeAtShop[shopName] +=
-                    (product.quantity /
-                      ingredientPage["nutritional quantity"]) *
-                    ingredientPage.kcal;
-                } else {
-                  throw new Error(
-                    "Neither the ingredient " +
-                      ingredientPage.name +
-                      " nor the product " +
-                      product.name +
-                      " have both 'kcal' and 'nutritional quantity' properties."
-                  );
-                }
+              if (!ingredientPage.pantry) {
+                updateCalorieValues(product, product.quantity);
 
                 groceryListAtShops[shopName].push(product);
                 minusPantryCostAtShops[shopName] += product.price;
@@ -185,29 +174,7 @@ class RecipeManager {
             // any one product
             cheapestProduct = productsSortedByProductCost[0];
 
-            if (
-              cheapestProduct.kcal &&
-              cheapestProduct["nutritional quantity"]
-            ) {
-              caloriesForRecipeAtShop[shopName] +=
-                (quantityRemaining / cheapestProduct["nutritional quantity"]) *
-                cheapestProduct.kcal;
-            } else if (
-              ingredientPage.kcal &&
-              ingredientPage["nutritional quantity"]
-            ) {
-              caloriesForRecipeAtShop[shopName] +=
-                (quantityRemaining / ingredientPage["nutritional quantity"]) *
-                ingredientPage.kcal;
-            } else {
-              throw new Error(
-                "Neither the ingredient " +
-                  ingredientPage.name +
-                  " nor the product " +
-                  product.name +
-                  " have both 'kcal' and 'nutritional quantity' properties."
-              );
-            }
+            updateCalorieValues(cheapestProduct, quantityRemaining);
 
             totalCostAtShops[shopName] += cheapestProduct.price;
             usedProductServingCostAtShops[shopName] +=
@@ -233,6 +200,50 @@ class RecipeManager {
       }
     }
 
+    // Filter out costs at shops where not all ingredients
+    // were available.
+    for (const shopDictionary of [
+      totalCostAtShops,
+      usedProductServingCostAtShops,
+    ]) {
+      const filterShops = [];
+      for (const shopName of Object.keys(shopDictionary)) {
+        if (recipePage.ingredients.length > presentAtShop[shopName].size) {
+          // This means that not all the ingredients had products at a shop
+          filterShops.push(shopName);
+        }
+      }
+      for (const deleteShopName of filterShops) {
+        delete shopDictionary[deleteShopName];
+      }
+    }
+
+    // Fix up calories for ingredients in the pantry
+    for (const shopName of Object.keys(caloriesForRecipeAtShop)) {
+      console.dir(recipePage.ingredients);
+      for (const ingredient of recipePage.ingredients) {
+        if (!IngredientsPresentInPantry.has(ingredient.name)) {
+          continue;
+        }
+        console.log(INGREDIENTS_ROOT + "/" + ingredient.name);
+        const ingredientPage = dv.page(
+          INGREDIENTS_ROOT + "/" + ingredient.name
+        );
+        console.dir(ingredientPage);
+        if (ingredientPage.kcal && ingredientPage["nutritional quantity"]) {
+          caloriesForRecipeAtShop[shopName] +=
+            (ingredient.quantity / ingredientPage["nutritional quantity"]) *
+            ingredientPage.kcal;
+        } else {
+          throw new Error(
+            "The ingredient " +
+              ingredientPage.file.name +
+              " does not have have both 'kcal' and 'nutritional quantity' properties and it is in your pantry."
+          );
+        }
+      }
+    }
+
     // Adjust for servings
     const caloriesPerServingAtShops = {};
     for (const shopName of Object.keys(
@@ -250,28 +261,39 @@ class RecipeManager {
     }
     // End of adjusting for servings
 
-    // Filter out costs at shops where not all ingredients
-    // were available.
+    // Filter where ingredients are not in either in the pantry
+    // or at the shop
     for (const shopDictionary of [
-      totalCostAtShops,
       caloriesPerServingAtShops,
       usedProductMinusPantryServingCostAtShops,
-      usedProductServingCostAtShops,
       minusPantryCostAtShops,
       groceryListAtShops,
     ]) {
       const filterShops = [];
       for (const shopName of Object.keys(shopDictionary)) {
-        if (recipePage.ingredients.length > presentAtShop[shopName].size) {
-          // This means that not all the ingredients had products at a shop
-          filterShops.push(shopName);
+        for (const ingredient of recipePage.ingredients) {
+          if (
+            !IngredientsPresentInPantry.has(ingredient.name) &&
+            !presentAtShop[shopName].has(ingredient.name)
+          ) {
+            console.log(
+              "Filtering " +
+                shopName +
+                " for " +
+                ingredient.name +
+                " in " +
+                recipePage.file.name
+            );
+            filterShops.push(shopName);
+            break;
+          }
         }
       }
       for (const deleteShopName of filterShops) {
         delete shopDictionary[deleteShopName];
       }
     }
-    // End of filter costs code
+
     return {
       recipe: recipePage,
       totalCostAtShops,

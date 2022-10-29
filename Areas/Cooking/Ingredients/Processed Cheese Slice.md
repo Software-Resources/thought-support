@@ -4,6 +4,9 @@ tags:
  - Unclassified
 unit: slices
 pantry: true
+kcal: 46
+protein: 3
+nutritional quantity: 1
 shops:
  - name: Tesco
    products:

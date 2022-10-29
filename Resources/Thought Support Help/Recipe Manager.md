@@ -4,6 +4,8 @@ I wrote it for myself to be able to quickly make smart choices based on the cost
 
 I will explain more about how to edit these files some time but for now you can see the folders *Ingredients* and *Recipes* located next to the Cookbook and Pantry for examples on how to create recipes and ingredients.
 
+The *kcal* and *nutritional quanitity* values are used in preference from the product if it is present and from the ingredient as a fallback if it is not. This allows setting generic kcal values on products like chicken. If a product is in your pantry you have to set *kcal* and *nutritional quantity* values for it or the manager wouldn't know how to calculate the nutritional info.
+
 - [CookBook](Areas/Cooking/Cookbook)
 - [Pantry](Areas/Cooking/Pantry)
 

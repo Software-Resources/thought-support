@@ -3,6 +3,9 @@ tags:
  - Ingredient
  - Unclassified
 unit: slices
+kcal: 94
+protein: 3.8
+nutritional quantity: 1
 pantry: true
 shops:
  - name: Tesco

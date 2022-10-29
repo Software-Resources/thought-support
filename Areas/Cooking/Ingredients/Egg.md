@@ -3,7 +3,7 @@ tags:
  - Unclassified
  - Ingredient
 kcal: 79
-pantry: true
+pantry: false
 protein: 7.6
 nutritional quantity: 1
 unit: each

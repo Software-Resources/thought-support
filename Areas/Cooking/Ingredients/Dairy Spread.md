@@ -4,10 +4,14 @@ tags:
  - Unclassified
 unit: grams
 pantry: true
+kcal: 587
+protein: 0.7
+nutritional quantity: 100
 shops:
  - name: Tesco
    products:
     - name: Clover Original Spread 1Kg
+      pantry: true
       kcal: 587
       protein: 0.7
       nutritional quantity: 100

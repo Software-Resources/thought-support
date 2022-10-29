@@ -4,6 +4,10 @@ tags:
  - Unclassified
 unit: grams
 pantry: true
+quantity: 420
+kcal: 87
+protein: 3.7
+nutritional quantity: 100
 shops:
  - name: Tesco
    products:
