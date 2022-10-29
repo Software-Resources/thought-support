@@ -1,0 +1,41 @@
+**/*
+!/.gitignore
+!/README
+!/LICENSE.md
+!/Home.md
+!/Resources
+!/Resources/Random Excerpt.md
+!/Resources/Excerpts
+!/Resources/Excerpts/Lifestyle
+!/Resources/Excerpts/Lifestyle/Stoicism
+!/Resources/Excerpts/Lifestyle/Stoicism/Epictetus
+!/Resources/Excerpts/Lifestyle/Stoicism/Epictetus/Enchiridion.md 
+!/Resources/Vault
+!/Resources/Vault/Settings.md
+!/Resources/Vault/Settings (Private Example).md
+!/Resources/Vault/CustomJS
+!/Resources/Vault/CustomJS/*
+!/Resources/Vault/Macros
+!/Resources/Vault/Macros/*
+!/Resources/Vault/Templates
+!/Resources/Vault/Templates/OKR.md
+!/Resources/Vault/Templates/KR.md
+!/Resources/Thought Support Help
+!/Resources/Thought Support Help/*
+!/Areas
+!/Areas/Routines
+!/Areas/Routines/Morning Routine.md
+!/Areas/Routines/Evening Routine.md
+!/Areas/Routines/Cleaning
+!/Areas/Routines/Cleaning/*
+!/.obsidian
+!/.obsidian/plugins
+!/.obsidian/plugins/customjs
+!/.obsidian/plugins/customjs/data.json
+!/.obsidian/plugins/dataview
+!/.obsidian/plugins/dataview/data.json
+!/.obsidian/plugins/quickadd
+!/.obsidian/plugins/quickadd/data.json
+!/.obsidian/plugins/homepage
+!/.obsidian/plugins/homepage/data.json
+debug.log
