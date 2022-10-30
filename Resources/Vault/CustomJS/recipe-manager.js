@@ -7,53 +7,14 @@ class RecipeManager {
     // Apologies for the lack of comments here, releasing this code
     // was an afterthought, initially this was just for me.
 
+    this.ensureIngredientCacheIsUpToDate();
+
     const { ThoughtSupportSettings } = customJS;
     const INGREDIENTS_ROOT = ThoughtSupportSettings.get("ingredients_root");
 
     const pantryList = [];
-    const IngredientsPresentInPantry = new Set();
+    const ingredientsPresentInPantry = new Set();
 
-    // TODO: Cache ingredientData for repetition between recipes
-    const ingredientData = recipePage.ingredients.reduce(
-      (ingredientData, ingredient) => {
-        const ingredientPage = dv.page(
-          INGREDIENTS_ROOT + "/" + ingredient.name
-        );
-        if (!ingredientPage) {
-          throw new Error(
-            "You are missing a page for the ingredient " + ingredient.name
-          );
-        }
-        // Save a list of things in the pantry for displaying to check on
-        // TODO: Handle dates
-        if (ingredientPage.pantry) {
-          pantryList.push(ingredientPage);
-          IngredientsPresentInPantry.add(ingredientPage.file.name);
-        }
-        const productData = ingredientPage.shops.reduce(
-          (ingredientAtShops, shop) => {
-            ingredientAtShops[shop.name] = {
-              productsSortedByCostRatio: shop.products
-                .map((product) => {
-                  return {
-                    ...product,
-                    pricePerUnit: product.price / product.quantity,
-                  };
-                })
-                .sort((a, b) => a.pricePerUnit - b.pricePerUnit),
-            };
-            ingredientAtShops[shop.name].productsSortedByProductCost = [
-              ...ingredientAtShops[shop.name].productsSortedByCostRatio,
-            ].sort((a, b) => a.price - b.price);
-            return ingredientAtShops;
-          },
-          {}
-        );
-        ingredientData[ingredient.name] = productData;
-        return ingredientData;
-      },
-      {}
-    );
     const totalCostAtShops = {};
     const usedProductServingCostAtShops = {};
     const minusPantryCostAtShops = {};
@@ -65,11 +26,18 @@ class RecipeManager {
     for (const ingredient of recipePage.ingredients) {
       const ingredientPage = dv.page(INGREDIENTS_ROOT + "/" + ingredient.name);
 
-      const ingredientAtShops = ingredientData[ingredient.name];
+      const ingredientAtShops = this.ingredientCache.get(ingredient.name);
+      if (!ingredientAtShops) {
+        throw new Error(
+          "You are missing a page for the ingredient " + ingredient.name
+        );
+      }
+
       for (const [shopName, productData] of Object.entries(ingredientAtShops)) {
         const updateCalorieValues = (product, quantity) => {
           if (ingredientPage.pantry) {
-            // Do nothing if it's in the pantry, we will fix those up at the end
+            // Do nothing if it's in the pantry, we deal with this near the
+            // end of the function.
             return;
           }
           if (product.kcal && product["nutritional quantity"]) {
@@ -220,16 +188,15 @@ class RecipeManager {
 
     // Fix up calories for ingredients in the pantry
     for (const shopName of Object.keys(caloriesForRecipeAtShop)) {
-      console.dir(recipePage.ingredients);
       for (const ingredient of recipePage.ingredients) {
-        if (!IngredientsPresentInPantry.has(ingredient.name)) {
-          continue;
-        }
-        console.log(INGREDIENTS_ROOT + "/" + ingredient.name);
         const ingredientPage = dv.page(
           INGREDIENTS_ROOT + "/" + ingredient.name
         );
-        console.dir(ingredientPage);
+
+        // TODO: Handle dates
+        if (!ingredientPage.pantry) {
+          continue;
+        }
         if (ingredientPage.kcal && ingredientPage["nutritional quantity"]) {
           caloriesForRecipeAtShop[shopName] +=
             (ingredient.quantity / ingredientPage["nutritional quantity"]) *
@@ -263,6 +230,7 @@ class RecipeManager {
 
     // Filter where ingredients are not in either in the pantry
     // or at the shop
+
     for (const shopDictionary of [
       caloriesPerServingAtShops,
       usedProductMinusPantryServingCostAtShops,
@@ -272,18 +240,15 @@ class RecipeManager {
       const filterShops = [];
       for (const shopName of Object.keys(shopDictionary)) {
         for (const ingredient of recipePage.ingredients) {
+          const ingredientPage = dv.page(
+            INGREDIENTS_ROOT + "/" + ingredient.name
+          );
+
           if (
-            !IngredientsPresentInPantry.has(ingredient.name) &&
+            // TODO: handle dates
+            !ingredientPage.pantry &&
             !presentAtShop[shopName].has(ingredient.name)
           ) {
-            console.log(
-              "Filtering " +
-                shopName +
-                " for " +
-                ingredient.name +
-                " in " +
-                recipePage.file.name
-            );
             filterShops.push(shopName);
             break;
           }
@@ -304,6 +269,45 @@ class RecipeManager {
       groceryListAtShops,
       pantryList,
     };
+  }
+
+  ingredientCache = new Map();
+  ensureIngredientCacheIsUpToDate() {
+    // For now just cache during the current codeblock.
+    if (this.ingredientCache.size > 0) {
+      return;
+    }
+
+    const dv = app.plugins.plugins.dataview.api;
+
+    // Get ingredientPages from dataView
+    const { ThoughtSupportSettings } = customJS;
+    const INGREDIENTS_ROOT = ThoughtSupportSettings.get("ingredients_root");
+    const ingredientPages = dv.pages('"' + INGREDIENTS_ROOT + '"');
+
+    for (const ingredientPage of ingredientPages) {
+      // TODO: Throw helpful errors if necessary YAML is missing
+      const productData = ingredientPage.shops.reduce(
+        (ingredientAtShops, shop) => {
+          ingredientAtShops[shop.name] = {
+            productsSortedByCostRatio: shop.products
+              .map((product) => {
+                return {
+                  ...product,
+                  pricePerUnit: product.price / product.quantity,
+                };
+              })
+              .sort((a, b) => a.pricePerUnit - b.pricePerUnit),
+          };
+          ingredientAtShops[shop.name].productsSortedByProductCost = [
+            ...ingredientAtShops[shop.name].productsSortedByCostRatio,
+          ].sort((a, b) => a.price - b.price);
+          return ingredientAtShops;
+        },
+        {}
+      );
+      this.ingredientCache.set(ingredientPage.file.name, productData);
+    }
   }
 
   recipes(params) {
