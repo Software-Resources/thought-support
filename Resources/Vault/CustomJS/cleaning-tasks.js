@@ -1,7 +1,7 @@
 class CleaningTasks {
   getTodaysTasks(dv) {
     const { ThoughtSupportSettings } = customJS;
-    const CLEANING_ROOT = ThoughtSupportSettings.get("cleaning_root", dv);
+    const CLEANING_ROOT = ThoughtSupportSettings.get("cleaning_root");
     function wholeWeekNumber(date) {
       const closestMonday = new Date(date);
       closestMonday.setDate(

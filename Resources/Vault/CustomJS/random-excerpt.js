@@ -1,7 +1,7 @@
 class RandomExcerpt {
   get(dv) {
     const { ThoughtSupportSettings } = customJS;
-    const EXCERPTS_ROOT = ThoughtSupportSettings.get("excerpts_root", dv);
+    const EXCERPTS_ROOT = ThoughtSupportSettings.get("excerpts_root");
     const pages = dv.pages('"' + EXCERPTS_ROOT + '"');
     const page = pages[Math.floor(Math.random() * pages.length)];
     if (page.file.lists.values.length < 1) {

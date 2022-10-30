@@ -2,8 +2,8 @@ module.exports = async (params) => {
   const { ThoughtSupportSettings } = customJS;
   const { obsidian, quickAddApi, app } = params;
 
-  const PROJECTS_ROOT = ThoughtSupportSettings.getFromApp("projects_root", app);
-  const INBOX_TAG = ThoughtSupportSettings.getFromApp("inbox_tag", app);
+  const PROJECTS_ROOT = ThoughtSupportSettings.get("projects_root");
+  const INBOX_TAG = ThoughtSupportSettings.get("inbox_tag");
 
   const cache = app.metadataCache;
   const files = app.vault.getMarkdownFiles();

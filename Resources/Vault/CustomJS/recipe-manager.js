@@ -8,7 +8,7 @@ class RecipeManager {
     // was an afterthought, initially this was just for me.
 
     const { ThoughtSupportSettings } = customJS;
-    const INGREDIENTS_ROOT = ThoughtSupportSettings.get("ingredients_root", dv);
+    const INGREDIENTS_ROOT = ThoughtSupportSettings.get("ingredients_root");
 
     const pantryList = [];
     const IngredientsPresentInPantry = new Set();
@@ -309,7 +309,7 @@ class RecipeManager {
   recipes(params) {
     const { dv } = params;
     const { ThoughtSupportSettings } = customJS;
-    const RECIPES_ROOT = ThoughtSupportSettings.get("recipes_root", dv);
+    const RECIPES_ROOT = ThoughtSupportSettings.get("recipes_root");
     const recipePages = dv.pages('"' + RECIPES_ROOT + '"');
 
     const recipes = recipePages.map((recipePage) =>
@@ -320,8 +320,8 @@ class RecipeManager {
 
   getCurrencyFormatter(dv) {
     const { ThoughtSupportSettings } = customJS;
-    const LOCALE = ThoughtSupportSettings.get("locale", dv);
-    const CURRENCY = ThoughtSupportSettings.get("currency", dv);
+    const LOCALE = ThoughtSupportSettings.get("locale");
+    const CURRENCY = ThoughtSupportSettings.get("currency");
     return new Intl.NumberFormat(LOCALE, {
       style: "currency",
       currency: CURRENCY,
@@ -351,7 +351,7 @@ class RecipeManager {
 
   pantryList(dv) {
     const { ThoughtSupportSettings } = customJS;
-    const INGREDIENTS_ROOT = ThoughtSupportSettings.get("ingredients_root", dv);
+    const INGREDIENTS_ROOT = ThoughtSupportSettings.get("ingredients_root");
     const ingredients = dv.pages('"' + INGREDIENTS_ROOT + '"');
     const pantryItems = ingredients.filter((page) => page.pantry);
     dv.header(2, "Pantry Items");
@@ -409,7 +409,7 @@ class RecipeManager {
   cookbook(params) {
     const { dv } = params;
     const { ThoughtSupportSettings } = customJS;
-    const shop = ThoughtSupportSettings.get("recipes_shop", dv);
+    const shop = ThoughtSupportSettings.get("recipes_shop");
     const recipes = this.recipes({
       dv,
     });

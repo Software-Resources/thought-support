@@ -2,13 +2,9 @@ module.exports = async (params) => {
   const { obsidian, quickAddApi, app } = params;
   const { ThoughtSupportSettings } = customJS;
 
-  const TEMPLATES_ROOT = ThoughtSupportSettings.getFromApp(
-    "templates_root",
-    app
-  );
-  const TEMPLATE_PAGE_NAME = ThoughtSupportSettings.getFromApp(
-    "kr_template_page_name",
-    app
+  const TEMPLATES_ROOT = ThoughtSupportSettings.get("templates_root");
+  const TEMPLATE_PAGE_NAME = ThoughtSupportSettings.get(
+    "kr_template_page_name"
   );
 
   const tag = "#OKR";

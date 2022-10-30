@@ -6,14 +6,10 @@ module.exports = async (params) => {
 
   const { ThoughtSupportSettings } = customJS;
 
-  const TEMPLATES_ROOT = ThoughtSupportSettings.getFromApp(
-    "templates_root",
-    app
-  );
-  const PROJECTS_ROOT = ThoughtSupportSettings.getFromApp("projects_root", app);
-  const TEMPLATE_PAGE_NAME = ThoughtSupportSettings.getFromApp(
-    "okr_template_page_name",
-    app
+  const TEMPLATES_ROOT = ThoughtSupportSettings.get("templates_root");
+  const PROJECTS_ROOT = ThoughtSupportSettings.get("projects_root");
+  const TEMPLATE_PAGE_NAME = ThoughtSupportSettings.get(
+    "okr_template_page_name"
   );
 
   const okrName = await inputPrompt("🎯 OKR Name");
